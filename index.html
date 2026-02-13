@@ -6,9 +6,23 @@
   <title>Rock Detective Sort</title>
   <style>
     :root { --gap: 14px; --radius: 16px; }
-    body { font-family: system-ui, Arial; margin: 0; background: #f6f7fb; color:#111; }
+   body { 
+  font-family: system-ui, Arial; 
+  margin: 0; 
+  background-image: url("marble.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  color:#111; 
+}
     header { padding: 18px 18px 8px; }
-    h1 { margin: 0 0 6px; font-size: 22px; }
+   h1 { 
+  margin: 0 0 6px; 
+  font-size: 48px; 
+  font-family: "Chalkboard SE", "Comic Sans MS", cursive; 
+  font-weight: bold; 
+  color: black;
+}
     p { margin: 0 0 10px; color:#444; }
     .wrap { padding: 12px 18px 22px; display: grid; gap: var(--gap); }
     .bins { display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
@@ -62,14 +76,26 @@
     }
     .controls { display:flex; gap: 10px; flex-wrap: wrap; }
     button {
-      border:0; border-radius: 999px; padding: 10px 14px;
-      background:#2f3cff; color:#fff; font-weight: 650;
-      cursor:pointer;
-      box-shadow: 0 10px 18px rgba(47,60,255,.25);
-    }
-    button.secondary { background:#111; box-shadow: 0 10px 18px rgba(0,0,0,.18); }
-    .msg { font-weight: 650; color:#1a1a1a; }
-    .small { font-size: 12px; color:#666; font-weight: 500; }
+  border:0; 
+  border-radius: 999px; 
+  padding: 10px 14px;
+  background:#2e8b57;   /* green check button */
+  color:#fff; 
+  font-weight: 650;
+  cursor:pointer;
+  box-shadow: 0 10px 18px rgba(46,139,87,.25);
+}
+
+button.secondary { 
+  background:#9aa0a6;   /* grey reset button */
+  box-shadow: 0 10px 18px rgba(0,0,0,.18); 
+}
+    .small { 
+  font-size: 24px; 
+  color: #ff4da6; 
+  font-family: "Comic Sans MS", "Comic Sans", cursive;
+  font-weight: normal;
+}
     @media (max-width: 720px){
       .bins { grid-template-columns: 1fr; }
       .card { width: 46%; min-width: 150px; }
@@ -79,8 +105,7 @@
 <body>
   <header>
     <h1>Rock Detective Sort</h1>
-    <p class="small">Drag each item into <b>Natural</b> or <b>Man-made</b>. Tap/drag a card to see the “3D” tilt.</p>
-    <div class="controls">
+    <p class="small">Drag each item into <b>Natural</b> or <b>Man-made</b>.</p>    <div class="controls">
       <button id="checkBtn">Check</button>
       <button class="secondary" id="resetBtn">Reset</button>
       <span class="msg" id="msg"></span>
