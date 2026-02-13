@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Rock Detective Sort</title>
+  <style>
+    :root { --gap: 14px; --radius: 16px; }
+    body { font-family: system-ui, Arial; margin: 0; background: #f6f7fb; color:#111; }
+    header { padding: 18px 18px 8px; }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    p { margin: 0 0 10px; color:#444; }
+    .wrap { padding: 12px 18px 22px; display: grid; gap: var(--gap); }
+    .bins { display:grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .bin {
+      background: white; border-radius: var(--radius);
+      padding: 12px; min-height: 180px;
+      border: 2px dashed #c9cdd9;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    }
+    .bin h2 { margin: 0 0 10px; font-size: 18px; display:flex; justify-content:space-between; }
+    .bin .hint { font-size: 12px; color:#666; font-weight: 500; }
+    .bin.over { border-color:#6b7cff; background:#f2f4ff; }
+    .tray {
+      background: white; border-radius: var(--radius);
+      padding: 12px; border:1px solid #e6e8f0;
+      box-shadow: 0 6px 18px rgba(0,0,0,.06);
+    }
+    .tray h2 { margin: 0 0 10px; font-size: 18px; }
+    .cards { display:flex; flex-wrap: wrap; gap: var(--gap); }
+    .card {
+      width: 140px; height: 165px; border-radius: 18px;
+      background: linear-gradient(180deg,#fff,#f4f6ff);
+      border: 1px solid #e4e6f2;
+      box-shadow: 0 14px 26px rgba(0,0,0,.12);
+      cursor: grab;
+      position: relative;
+      transform-style: preserve-3d;
+      user-select:none;
+    }
+    .card:active { cursor: grabbing; }
+    .card .img {
+      width: 120px; height: 100px; margin: 12px auto 0;
+      border-radius: 14px;
+      background-size: cover; background-position: center;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.7),
+        0 18px 30px rgba(0,0,0,.18);
+      transform: translateZ(18px);
+    }
+    .card .label {
+      margin: 10px 10px 0;
+      font-size: 13px; font-weight: 650;
+      text-align:center;
+      transform: translateZ(10px);
+    }
+    .tag {
+      position:absolute; top:10px; left:10px;
+      font-size: 11px; padding: 4px 8px; border-radius: 999px;
+      background:#111; color:#fff; opacity:.88;
+      transform: translateZ(22px);
+    }
+    .controls { display:flex; gap: 10px; flex-wrap: wrap; }
+    button {
+      border:0; border-radius: 999px; padding: 10px 14px;
+      background:#2f3cff; color:#fff; font-weight: 650;
+      cursor:pointer;
+      box-shadow: 0 10px 18px rgba(47,60,255,.25);
+    }
+    button.secondary { background:#111; box-shadow: 0 10px 18px rgba(0,0,0,.18); }
+    .msg { font-weight: 650; color:#1a1a1a; }
+    .small { font-size: 12px; color:#666; font-weight: 500; }
+    @media (max-width: 720px){
+      .bins { grid-template-columns: 1fr; }
+      .card { width: 46%; min-width: 150px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Rock Detective Sort</h1>
+    <p class="small">Drag each item into <b>Natural</b> or <b>Man-made</b>. Tap/drag a card to see the “3D” tilt.</p>
+    <div class="controls">
+      <button id="checkBtn">Check</button>
+      <button class="secondary" id="resetBtn">Reset</button>
+      <span class="msg" id="msg"></span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="bins">
+      <div class="bin" id="naturalBin" data-bin="natural">
+        <h2>Natural <span class="hint" id="naturalCount">0</span></h2>
+        <div class="cards" id="naturalCards"></div>
+      </div>
+      <div class="bin" id="manmadeBin" data-bin="manmade">
+        <h2>Man-made <span class="hint" id="manmadeCount">0</span></h2>
+        <div class="cards" id="manmadeCards"></div>
+      </div>
+    </section>
+
+    <section class="tray">
+      <h2>Tray</h2>
+      <div class="cards" id="tray"></div>
+    </section>
+  </main>
+
+<script>
+  // Simple “3D look” images using inline SVG (so it works offline).
+  // You can replace any img with a real photo URL later.
+  const svgDataUrl = (svg) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+  const rockSvg = (seed, label) => svgDataUrl(`
+    <svg xmlns="http://www.w3.org/2000/svg" width="600" height="450">
+      <defs>
+        <radialGradient id="g" cx="35%" cy="30%" r="85%">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.65"/>
+          <stop offset="0.35" stop-color="#cfd4da" stop-opacity="0.65"/>
+          <stop offset="1" stop-color="#70757b" stop-opacity="1"/>
+        </radialGradient>
+        <filter id="s" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".35"/>
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="#eef1f7"/>
+      <path filter="url(#s)" fill="url(#g)" d="
+        M110 270
+        C110 190 160 120 250 105
+        C310 70 390 95 440 140
+        C520 160 545 240 510 300
+        C525 360 470 405 390 395
+        C330 420 240 420 190 380
+        C135 370 95 320 110 270
+        Z"/>
+      <g opacity=".35">
+        <circle cx="${170+seed}" cy="${165+seed}" r="22" fill="#fff"/>
+        <circle cx="${320+seed}" cy="${170+seed}" r="14" fill="#fff"/>
+        <circle cx="${410-seed}" cy="${250+seed}" r="18" fill="#fff"/>
+        <circle cx="${260-seed}" cy="${290-seed}" r="12" fill="#fff"/>
+      </g>
+      <text x="30" y="420" font-family="system-ui, Arial" font-size="34" fill="#2b2f33" opacity="0.75">${label}</text>
+    </svg>
+  `);
+
+  const items = [
+    { id:"granite",  name:"Granite",  type:"natural",  img:"granite.jpg"},
+    { id:"concrete", name:"Concrete", type:"manmade",  img:"concrete.jpg"},
+    { id:"slate",    name:"Slate",    type:"natural",  img:"slate.jpg"},
+    { id:"glass",    name:"Glass",    type:"manmade",  img:"glass.jpg"},
+
+    { id:"sandstone",name:"Sandstone",type:"natural",  img:"sandstone.jpg"},
+    { id:"chalk",    name:"Chalk",    type:"natural",  img:"chalk.jpg"},
+    { id:"brick",    name:"Brick",    type:"manmade",  img:"brick.jpg"},
+    { id:"tile",     name:"Tile",     type:"manmade",  img:"tile.jpg"},
+  ];
+
+  const tray = document.getElementById("tray");
+  const naturalCards = document.getElementById("naturalCards");
+  const manmadeCards = document.getElementById("manmadeCards");
+  const bins = [document.getElementById("naturalBin"), document.getElementById("manmadeBin")];
+
+  function makeCard(item){
+    const el = document.createElement("div");
+    el.className = "card";
+    el.draggable = true;
+    el.dataset.id = item.id;
+    el.dataset.type = item.type;
+
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = "Drag me";
+    el.appendChild(tag);
+
+    const img = document.createElement("div");
+    img.className = "img";
+    img.style.backgroundImage = `url("${item.img}")`;
+    el.appendChild(img);
+
+    const label = document.createElement("div");
+    label.className = "label";
+    label.textContent = item.name;
+    el.appendChild(label);
+
+    // Drag events
+    el.addEventListener("dragstart", (e)=>{
+      e.dataTransfer.setData("text/plain", item.id);
+      setTimeout(()=> el.style.opacity = "0.35", 0);
+    });
+    el.addEventListener("dragend", ()=>{
+      el.style.opacity = "1";
+    });
+
+    // “3D tilt” interaction
+    el.addEventListener("pointermove", (e)=>{
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;
+      const y = (e.clientY - r.top) / r.height;
+      const rx = (0.5 - y) * 14;
+      const ry = (x - 0.5) * 18;
+      el.style.transform = `perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    });
+    el.addEventListener("pointerleave", ()=>{
+      el.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg)`;
+    });
+
+    return el;
+  }
+
+  function render(){
+    tray.innerHTML = "";
+    items.forEach(i => tray.appendChild(makeCard(i)));
+    updateCounts();
+    setMsg("");
+  }
+
+  function setMsg(text){ document.getElementById("msg").textContent = text; }
+
+  function updateCounts(){
+    document.getElementById("naturalCount").textContent = `${naturalCards.children.length} items`;
+    document.getElementById("manmadeCount").textContent = `${manmadeCards.children.length} items`;
+  }
+
+  // Bin drag logic
+  bins.forEach(bin => {
+    bin.addEventListener("dragover", (e)=>{ e.preventDefault(); bin.classList.add("over"); });
+    bin.addEventListener("dragleave", ()=> bin.classList.remove("over"));
+    bin.addEventListener("drop", (e)=>{
+      e.preventDefault();
+      bin.classList.remove("over");
+      const id = e.dataTransfer.getData("text/plain");
+      const card = document.querySelector(`.card[data-id="${id}"]`);
+      if(!card) return;
+      const target = bin.dataset.bin === "natural" ? naturalCards : manmadeCards;
+      target.appendChild(card);
+      updateCounts();
+    });
+  });
+
+  // Check answers
+  document.getElementById("checkBtn").addEventListener("click", ()=>{
+    let correct = 0, total = 0;
+
+    const allPlaced = [...naturalCards.children, ...manmadeCards.children];
+    total = allPlaced.length;
+
+    allPlaced.forEach(card=>{
+      const placedIn = card.parentElement.id.includes("natural") ? "natural" : "manmade";
+      const shouldBe = card.dataset.type;
+      const ok = placedIn === shouldBe;
+      card.style.outline = ok ? "4px solid #2ecc71" : "4px solid #ff3b30";
+      correct += ok ? 1 : 0;
+    });
+
+    if(total === 0){
+      setMsg("Drag some items first 🙂");
+      return;
+    }
+    setMsg(`Score: ${correct}/${total}`);
+  });
+
+  // Reset
+  document.getElementById("resetBtn").addEventListener("click", ()=>{
+  // Move ALL existing cards back to the tray
+  const allCards = document.querySelectorAll(".card");
+  allCards.forEach(card => {
+    card.style.outline = "none";     // remove red/green borders
+    card.style.opacity = "1";
+    tray.appendChild(card);          // put back in tray
+  });
+
+  setMsg("");
+  updateCounts();
+});
+
+  render();
+</script>
+</body>
+</html>
