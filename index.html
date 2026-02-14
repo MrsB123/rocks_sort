@@ -168,9 +168,6 @@ button.secondary {
   `);
 function speak(text) {
   const speech = new SpeechSynthesisUtterance(text);
-  speech.rate = 0.9;
-  speech.pitch = 1;
-  speech.volume = 1;
   window.speechSynthesis.speak(speech);
 }
   const items = [
