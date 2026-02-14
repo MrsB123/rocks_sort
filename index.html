@@ -166,10 +166,7 @@ button.secondary {
       <text x="30" y="420" font-family="system-ui, Arial" font-size="34" fill="#2b2f33" opacity="0.75">${label}</text>
     </svg>
   `);
-function speak(text) {
-  const speech = new SpeechSynthesisUtterance(text);
-  window.speechSynthesis.speak(speech);
-}
+
   const items = [
     { id:"granite",  name:"Granite",  type:"natural",  img:"granite.jpg"},
     { id:"concrete", name:"Concrete", type:"manmade",  img:"concrete.jpg"},
@@ -206,7 +203,7 @@ function speak(text) {
 
     const label = document.createElement("div");
     label.className = "label";
-  label.onclick = () => speak(item.name);
+    label.textContent = item.name;
     el.appendChild(label);
 
     // Drag events
